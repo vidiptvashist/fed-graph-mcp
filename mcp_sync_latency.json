@@ -58,5 +58,41 @@
     "event_type": "full_rebuild",
     "details": "Complete rebuild (2771 tools)",
     "sync_latency_ms": 7907.896875000006
+  },
+  {
+    "timestamp": 1780949109.4479291,
+    "event_type": "server_add",
+    "details": "Server MockDBSpeed with 2 tools",
+    "sync_latency_ms": 1142.4159589999974
+  },
+  {
+    "timestamp": 1780949110.745947,
+    "event_type": "tool_update",
+    "details": "Tool MockDBSpeed/query_speed",
+    "sync_latency_ms": 1296.772292
+  },
+  {
+    "timestamp": 1780949110.753736,
+    "event_type": "server_remove",
+    "details": "Server MockDBSpeed with 2 tools",
+    "sync_latency_ms": 6.762000000001933
+  },
+  {
+    "timestamp": 1780949111.867867,
+    "event_type": "server_add",
+    "details": "Server ServerA with 1 tools",
+    "sync_latency_ms": 1072.0335419999997
+  },
+  {
+    "timestamp": 1780949112.919822,
+    "event_type": "server_add",
+    "details": "Server ServerB with 1 tools",
+    "sync_latency_ms": 1051.5753330000025
+  },
+  {
+    "timestamp": 1780949113.977046,
+    "event_type": "tool_update",
+    "details": "Tool ServerA/toolA",
+    "sync_latency_ms": 1056.8278329999998
   }
 ]
