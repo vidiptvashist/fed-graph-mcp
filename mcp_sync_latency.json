@@ -1,0 +1,62 @@
+[
+  {
+    "timestamp": 1780947830.659785,
+    "event_type": "server_add",
+    "details": "Server MockDBSpeed with 2 tools",
+    "sync_latency_ms": 1556.1360000000022
+  },
+  {
+    "timestamp": 1780947832.2125928,
+    "event_type": "tool_update",
+    "details": "Tool MockDBSpeed/query_speed",
+    "sync_latency_ms": 1551.1192089999995
+  },
+  {
+    "timestamp": 1780947832.221549,
+    "event_type": "server_remove",
+    "details": "Server MockDBSpeed with 2 tools",
+    "sync_latency_ms": 7.866958999997564
+  },
+  {
+    "timestamp": 1780947833.597288,
+    "event_type": "server_add",
+    "details": "Server ServerA with 1 tools",
+    "sync_latency_ms": 1312.3375000000053
+  },
+  {
+    "timestamp": 1780947834.8413298,
+    "event_type": "server_add",
+    "details": "Server ServerB with 1 tools",
+    "sync_latency_ms": 1243.664041999999
+  },
+  {
+    "timestamp": 1780947835.9423628,
+    "event_type": "tool_update",
+    "details": "Tool ServerA/toolA",
+    "sync_latency_ms": 1100.7217090000054
+  },
+  {
+    "timestamp": 1780947841.7018921,
+    "event_type": "server_add",
+    "details": "Server MockOptimizer with 1 tools",
+    "sync_latency_ms": 1173.180458000001
+  },
+  {
+    "timestamp": 1780947842.98297,
+    "event_type": "tool_update",
+    "details": "Tool MockOptimizer/sqlite_optimize_index",
+    "sync_latency_ms": 1269.5830419999988
+  },
+  {
+    "timestamp": 1780947843.026329,
+    "event_type": "server_remove",
+    "details": "Server MockOptimizer with 1 tools",
+    "sync_latency_ms": 4.0842919999981575
+  },
+  {
+    "timestamp": 1780947851.139274,
+    "event_type": "full_rebuild",
+    "details": "Complete rebuild (2771 tools)",
+    "sync_latency_ms": 7907.896875000006
+  }
+]

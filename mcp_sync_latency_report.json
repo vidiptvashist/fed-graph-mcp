@@ -1,0 +1,31 @@
+{
+  "incremental_latencies": {
+    "server_add": 1173.180458000001,
+    "tool_update": 1269.5830419999988,
+    "server_remove": 4.0842919999981575
+  },
+  "full_rebuild": {
+    "full_rebuild_ms": 7907.896875000006,
+    "graph_build_ms": 4738.817709000003,
+    "embedding_ms": 1997.5897910000028,
+    "gnn_forward_ms": 1001.7498339999981,
+    "faiss_build_ms": 169.739541000002
+  },
+  "reduction_ratios": {
+    "server_add": {
+      "incremental_ms": 1173.180458000001,
+      "full_rebuild_ms": 7907.896875000006,
+      "reduction_pct": 85.16444414305795
+    },
+    "tool_update": {
+      "incremental_ms": 1269.5830419999988,
+      "full_rebuild_ms": 7907.896875000006,
+      "reduction_pct": 83.94537685470263
+    },
+    "server_remove": {
+      "incremental_ms": 4.0842919999981575,
+      "full_rebuild_ms": 7907.896875000006,
+      "reduction_pct": 99.94835172910625
+    }
+  }
+}

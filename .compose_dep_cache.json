@@ -1,0 +1,62 @@
+{
+  "A->B": {
+    "prerequisite": true,
+    "confidence": 0.9,
+    "reason": "Tool get_user_token provides authentication for server ServerA tools."
+  },
+  "A->C": {
+    "prerequisite": true,
+    "confidence": 0.9,
+    "reason": "Tool get_user_token provides authentication for server ServerA tools."
+  },
+  "A->D": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "B->A": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "B->C": {
+    "prerequisite": true,
+    "confidence": 0.85,
+    "reason": "Entity read (query_alarm) matches entity write (cancel_alarm) flow."
+  },
+  "B->D": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "C->A": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "C->B": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "C->D": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "D->A": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "D->B": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  },
+  "D->C": {
+    "prerequisite": false,
+    "confidence": 0.0,
+    "reason": "No compositional dependency detected via heuristics."
+  }
+}
