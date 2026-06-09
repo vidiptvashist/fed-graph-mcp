@@ -356,115 +356,96 @@ def parse_apibank_tools(apis_dir: str) -> Dict[str, str]:
 
 def train_reranker(
     base_dir: str = None,
+    pipeline: RetrievalPipeline = None,
+    train_tools: List[str] = None,
     epochs: int = 15,
     lr: float = 0.001,
     margin: float = 1.0,
     device: str = "cpu"
 ) -> LearnedReranker:
     """
-    Loads API-Bank trajectories, extracts query-tool pairs, builds positive/negative pairs,
-    and trains a LearnedReranker MLP model with pairwise margin loss.
+    Trains a LearnedReranker MLP model with pairwise margin loss using query-tool
+    pairs generated from the training split of the MCP tools.
     """
     if base_dir is None:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
-    apis_dir = os.path.join(base_dir, "damo_convai_repo/api-bank/apis")
-    trajectory_dir = os.path.join(base_dir, "damo_convai_repo/api-bank/lv1-lv2-samples")
-    
-    # 1. Parse API-Bank tool descriptions
-    apibank_tools = parse_apibank_tools(apis_dir)
-    print(f"[RerankerTrain] Mined {len(apibank_tools)} API-Bank tools.")
-    
-    if len(apibank_tools) == 0:
-        print("[RerankerTrain] Warning: No API-Bank tools found. Returning default Reranker.")
-        return LearnedReranker()
+    if pipeline is None:
+        print("[RerankerTrain] Initializing pipeline...")
+        pipeline = RetrievalPipeline(base_dir=base_dir)
         
-    # 2. Extract trajectory dialogues
-    dialogue_files = []
-    for root, _, files in os.walk(trajectory_dir):
-        for file in files:
-            if file.endswith(".jsonl"):
-                dialogue_files.append(os.path.join(root, file))
-                
-    # Parse queries and positive APIs called
-    dataset_pairs = [] # List of (query_text, pos_tool_name)
-    
-    # Normalize tool name keys
-    clean_to_exact_name = {k.lower().replace("_", "").replace("-", ""): k for k in apibank_tools.keys()}
-    
-    for file_path in dialogue_files:
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            if not lines:
-                continue
-                
-            # First User turn is the query
-            query_text = ""
-            for line in lines:
-                turn = json.loads(line)
-                if turn.get("role", "").upper() == "USER":
-                    query_text = turn.get("text", "")
-                    break
-                    
-            if not query_text:
-                continue
-                
-            # Collect invoked APIs
-            invoked_apis = set()
-            for line in lines:
-                turn = json.loads(line)
-                if turn.get("role", "").upper() == "API":
-                    api_name = turn.get("api_name") or turn.get("api")
-                    if api_name:
-                        cleaned = api_name.lower().replace("_", "").replace("-", "")
-                        if cleaned in clean_to_exact_name:
-                            invoked_apis.add(clean_to_exact_name[cleaned])
-                            
-            # Record dataset pairs
-            for api in invoked_apis:
-                dataset_pairs.append((query_text, api))
-        except Exception as e:
-            print(f"[RerankerTrain] Error reading {file_path}: {e}")
-            continue
-            
-    print(f"[RerankerTrain] Extracted {len(dataset_pairs)} query-tool positive pairs.")
-    if len(dataset_pairs) == 0:
-        return LearnedReranker()
+    if train_tools is None:
+        # Determine the training tools split deterministically using seed 12345
+        all_tools = sorted(list(pipeline.node_to_idx.keys()))
+        import numpy as np
+        split_rng = np.random.RandomState(12345)
+        shuffled_tools = all_tools.copy()
+        split_rng.shuffle(shuffled_tools)
+        split_idx = int(len(shuffled_tools) * 0.8)
+        train_tools = shuffled_tools[:split_idx]
         
-    # 3. Embed queries and tool descriptions using SentenceTransformer
-    print("[RerankerTrain] Generating embeddings for Reranker training...")
-    model_st = SentenceTransformer("all-MiniLM-L6-v2")
+    print(f"[RerankerTrain] Mined {len(train_tools)} training tools.")
     
-    # Distinct queries and tools
-    unique_queries = list(set([p[0] for p in dataset_pairs]))
-    unique_tools = list(apibank_tools.keys())
+    # Templates for query paraphrasing
+    templates = [
+        "I need to {desc}",
+        "How can I {desc}?",
+        "Help me {desc}",
+        "Can you {desc} for me?",
+        "I want to {desc}",
+        "Please {desc}",
+        "Use a tool to {desc}",
+        "Find a way to {desc}",
+        "{desc}",
+        "I'd like to {desc}",
+    ]
     
-    query_embs = model_st.encode(unique_queries, show_progress_bar=False)
-    query_emb_map = {q: emb for q, emb in zip(unique_queries, query_embs)}
-    
-    tool_descriptions = [apibank_tools[t] if apibank_tools[t] else t for t in unique_tools]
-    tool_embs = model_st.encode(tool_descriptions, show_progress_bar=False)
-    tool_emb_map = {t: emb for t, emb in zip(unique_tools, tool_embs)}
-    
-    # 4. Construct triplets (query, positive, negative)
     triplets = []
-    for q, pos_tool in dataset_pairs:
-        # Find all APIs invoked in any query associated with this dialogue context
-        # (For simplicity, negative tool is any tool not equal to pos_tool)
-        other_tools = [t for t in unique_tools if t != pos_tool]
-        if not other_tools:
-            continue
-        neg_tool = random.choice(other_tools)
+    import random
+    random.seed(42)
+    
+    print(f"[RerankerTrain] Generating query-tool training triplets...")
+    for pos_tool in train_tools:
+        desc = pipeline.G.nodes[pos_tool].get("description", "")
+        if not desc:
+            desc = pos_tool.split("/")[-1].replace("_", " ")
+        desc_lower = desc.strip().rstrip(".").lower()
         
-        q_emb = query_emb_map[q]
-        pos_emb = tool_emb_map[pos_tool]
-        neg_emb = tool_emb_map[neg_tool]
+        # Select random template
+        template = random.choice(templates)
+        query = template.format(desc=desc_lower)
         
+        # 1. Generate a random negative
+        random_candidates = [t for t in train_tools if t != pos_tool]
+        neg_random = random.choice(random_candidates)
+        
+        # 2. Mine a hard negative from top dense and GNN candidates
+        d_candidates = [c["name"] for c in pipeline.retrieve_dense(query, k=10)]
+        g_candidates = [c["name"] for c in pipeline.retrieve_gnn(query, k=10)]
+        hard_pool = list(set(d_candidates + g_candidates))
+        hard_pool = [t for t in hard_pool if t != pos_tool and t in train_tools]
+        if hard_pool:
+            neg_hard = random.choice(hard_pool)
+        else:
+            neg_hard = neg_random
+            
+        # Get embeddings
+        q_emb = pipeline.model_st.encode([query], show_progress_bar=False)[0]
+        pos_emb = pipeline.X[pipeline.node_to_idx[pos_tool]]
+        neg_random_emb = pipeline.X[pipeline.node_to_idx[neg_random]]
+        neg_hard_emb = pipeline.X[pipeline.node_to_idx[neg_hard]]
+        
+        # Add random negative triplet
         triplets.append((
             torch.tensor(q_emb, dtype=torch.float32),
             torch.tensor(pos_emb, dtype=torch.float32),
-            torch.tensor(neg_emb, dtype=torch.float32)
+            torch.tensor(neg_random_emb, dtype=torch.float32)
+        ))
+        # Add hard negative triplet
+        triplets.append((
+            torch.tensor(q_emb, dtype=torch.float32),
+            torch.tensor(pos_emb, dtype=torch.float32),
+            torch.tensor(neg_hard_emb, dtype=torch.float32)
         ))
         
     # 5. Training loop

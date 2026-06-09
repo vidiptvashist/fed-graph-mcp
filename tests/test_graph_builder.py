@@ -29,14 +29,14 @@ def mock_manifest_file():
                 },
                 {
                     "name": "query_alarm",
-                    "description": "Query all set alarms",
+                    "description": "Alarms tool to query set alarms on the server",
                     "parameter": {
                         "user_id": "(string) The user identity"
                     }
                 },
                 {
                     "name": "cancel_alarm",
-                    "description": "Cancel a specific alarm",
+                    "description": "Alarms tool to cancel a specific alarm on the server",
                     "parameter": {
                         "alarm_id": "(integer) The ID of alarm to cancel",
                         "user_id": "(string) The user identity"
@@ -141,18 +141,18 @@ def test_co_invocation_miner(mock_manifest_file, mock_trajectory_dir):
         assert reversed_edge[2] == pytest.approx(w)
 
 def test_schema_compat_miner():
-    # Tool A parameters: ['string', 'integer']
-    # Tool B parameters: ['string'] -> overlap is 1.0 (intersection is {'string'}, min size is 1)
-    # Tool C parameters: ['number'] -> overlap is 0.0
+    # Tool A parameters: ['param_string', 'param_int']
+    # Tool B parameters: ['param_string'] -> overlap is 1.0 (intersection is {'param_string'}, min size is 1)
+    # Tool C parameters: ['param_num'] -> overlap is 0.0
     tools = [
-        {"id": "A", "parameter_types": ["string", "integer"]},
-        {"id": "B", "parameter_types": ["string"]},
-        {"id": "C", "parameter_types": ["number"]}
+        {"id": "A", "parameter_names": ["param_string", "param_int"]},
+        {"id": "B", "parameter_names": ["param_string"]},
+        {"id": "C", "parameter_names": ["param_num"]}
     ]
     miner = SchemaCompatMiner()
     edges = miner.mine_edges(tools)
     
-    # Check edges between A and B (overlap = 1.0 > 0.7)
+    # Check edges between A and B (overlap = 1.0 >= 0.7)
     ab_edge = next((e for e in edges if e[0] == "A" and e[1] == "B"), None)
     assert ab_edge is not None
     assert ab_edge[2] == 1.0
@@ -162,13 +162,13 @@ def test_schema_compat_miner():
     assert len(c_edges) == 0
 
 def test_param_overlap_miner():
-    # Tool A: ['string', 'integer']
-    # Tool B: ['string'] -> union is {'string', 'integer'}, intersection {'string'} -> Jaccard = 1/2 = 0.5 (> 0.4)
-    # Tool C: ['string', 'number'] -> Jaccard A-C is {'string'} / {'string', 'integer', 'number'} = 1/3 = 0.33 (<= 0.4)
+    # Tool A: ['param_string', 'param_int']
+    # Tool B: ['param_string'] -> union is {'param_string', 'param_int'}, intersection {'param_string'} -> Jaccard = 1/2 = 0.5 (>= 0.3)
+    # Tool C: ['param_string', 'param_num'] -> Jaccard A-C is {'param_string'} / {'param_string', 'param_int', 'param_num'} = 1/3 = 0.33 (>= 0.3)
     tools = [
-        {"id": "A", "parameter_types": ["string", "integer"]},
-        {"id": "B", "parameter_types": ["string"]},
-        {"id": "C", "parameter_types": ["string", "number"]}
+        {"id": "A", "parameter_names": ["param_string", "param_int"]},
+        {"id": "B", "parameter_names": ["param_string"]},
+        {"id": "C", "parameter_names": ["param_string", "param_num", "param_other"]}
     ]
     miner = ParamOverlapMiner()
     edges = miner.mine_edges(tools)

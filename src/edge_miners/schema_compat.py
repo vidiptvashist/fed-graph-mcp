@@ -9,38 +9,46 @@ class SchemaCompatMiner:
     
     def mine_edges(self, tools: List[Dict[str, Any]]) -> List[Tuple[str, str, float]]:
         """
-        Computes schema compatibility overlap for all pairs of tools and yields edges if overlap > 0.7.
+        Computes schema compatibility overlap for all pairs of tools based on parameter names.
+        Yields edges if overlap >= 0.7.
+        Excludes generic parameter names to avoid false positive hubs.
         Returns a list of (tool_id_A, tool_id_B, weight).
         """
         edges = []
         n_tools = len(tools)
         
-        # Pre-compute parameter type sets to avoid O(V^2) redundant set() conversions
+        generic_names = {'id', 'name', 'type', 'query', 'text', 'desc', 'description', 'key', 'value', 'data', 'params', 'args'}
+        
+        # Pre-compute parameter name sets
         tool_sets = []
         for t in tools:
-            param_types = t.get("parameter_types", [])
-            tool_sets.append(set(param_types) if param_types else set())
+            param_names = t.get("parameter_names", [])
+            names_set = set(param_names) - generic_names if param_names else set()
+            tool_sets.append(names_set)
             
         for i in range(n_tools):
             id_A = tools[i]["id"]
-            types_A = tool_sets[i]
+            names_A = tool_sets[i]
             
-            # Skip tools with no parameters
-            if not types_A:
+            # Skip tools with no non-generic parameters
+            if not names_A:
                 continue
                 
             for j in range(i + 1, n_tools):
-                types_B = tool_sets[j]
+                names_B = tool_sets[j]
                 
-                # Skip tools with no parameters
-                if not types_B:
+                # Skip tools with no non-generic parameters
+                if not names_B:
                     continue
                     
                 # Compute overlap coefficient: |A intersect B| / min(|A|, |B|)
-                intersection = types_A.intersection(types_B)
-                overlap = len(intersection) / min(len(types_A), len(types_B))
+                intersection = names_A.intersection(names_B)
+                if not intersection:
+                    continue
+                    
+                overlap = len(intersection) / min(len(names_A), len(names_B))
                 
-                if overlap > 0.7:
+                if overlap >= 0.7:
                     id_B = tools[j]["id"]
                     # Add directed edges in both directions (symmetric)
                     edges.append((id_A, id_B, overlap))

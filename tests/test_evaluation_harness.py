@@ -57,7 +57,11 @@ def test_generate_latex_tables(harness):
         }
     }
     
-    latex_str = harness.generate_latex_tables(mock_results)
+    latex_file = os.path.join(harness.base_dir, "evaluation_tables_test.tex")
+    if os.path.exists(latex_file):
+        os.remove(latex_file)
+        
+    latex_str = harness.generate_latex_tables(mock_results, output_path=latex_file)
     assert "\\begin{table}" in latex_str
     assert "Recall@1" in latex_str
     assert "LiveMCPBench" in latex_str
@@ -65,6 +69,7 @@ def test_generate_latex_tables(harness):
     assert "simulated benchmark conditions" in latex_str
     
     # Check that it saves the file successfully
-    latex_file = os.path.join(harness.base_dir, "evaluation_tables.tex")
     assert os.path.exists(latex_file)
+    # Clean up
+    os.remove(latex_file)
 

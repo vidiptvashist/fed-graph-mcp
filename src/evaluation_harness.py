@@ -25,6 +25,16 @@ class EvaluationHarness:
         self.base_dir = pipeline.base_dir
         self.device = "cpu"
         
+        # Partition tools deterministically (80% train, 20% test) using seed 12345
+        all_tools = sorted(list(self.pipeline.node_to_idx.keys()))
+        split_rng = np.random.RandomState(12345)
+        shuffled_tools = all_tools.copy()
+        split_rng.shuffle(shuffled_tools)
+        
+        split_idx = int(len(shuffled_tools) * 0.8)
+        self.train_tools = shuffled_tools[:split_idx]
+        self.test_tools = shuffled_tools[split_idx:]
+        
         # Load learned reranker
         self.reranker = LearnedReranker(input_dim=768, hidden_dim=256).to(self.device)
         reranker_path = os.path.join(self.base_dir, "mcp_reranker.pt")
@@ -39,11 +49,11 @@ class EvaluationHarness:
     def _build_semantic_tasks(self, count: int, seed: int, prefix: str) -> List[Dict[str, Any]]:
         """
         Generates semantically grounded evaluation tasks by sampling real tools
-        from the graph and deriving natural-language queries from their descriptions.
+        from the test graph partition and deriving natural-language queries.
         Uses deterministic seeding for reproducibility.
         """
         rng = np.random.RandomState(seed)
-        tool_names = list(self.pipeline.node_to_idx.keys())
+        tool_names = self.test_tools
         
         # Natural-language query templates to introduce variation
         templates = [
@@ -59,7 +69,7 @@ class EvaluationHarness:
             "I'd like to {desc}",
         ]
         
-        # Sample tools deterministically
+        # Sample tools deterministically from the test tools split
         sampled_indices = rng.choice(len(tool_names), size=count, replace=True)
         
         tasks = []
@@ -258,7 +268,7 @@ class EvaluationHarness:
         
         return results
 
-    def generate_latex_tables(self, results: Dict[str, Any]) -> str:
+    def generate_latex_tables(self, results: Dict[str, Any], output_path: str = None) -> str:
         """
         Generates LaTeX tables from the evaluation results.
         Tables include a footnote clarifying simulated benchmark conditions.
@@ -322,7 +332,7 @@ class EvaluationHarness:
         final_latex = "\n\n".join(latex_output)
         
         # Save LaTeX code to a file
-        latex_path = os.path.join(self.base_dir, "evaluation_tables.tex")
+        latex_path = output_path or os.path.join(self.base_dir, "evaluation_tables.tex")
         with open(latex_path, "w", encoding="utf-8") as f:
             f.write(final_latex)
         print(f"[Ablation] Saved LaTeX tables to: {latex_path}")

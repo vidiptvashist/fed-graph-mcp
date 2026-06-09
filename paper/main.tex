@@ -138,7 +138,7 @@ FED-GRAPH-MCP addresses all three gaps. Our contributions are:
     \item A \textbf{multi-typed functional tool graph}
     $G = (V, E)$ with four edge types
     (\textsc{co\_invoke}, \textsc{schema\_compat},
-    \textsc{param\_type\_overlap}, \textsc{compose\_dep})
+    \textsc{param\_name\_overlap}, \textsc{compose\_dep})
     derived automatically from tool manifests and invocation logs.
 
     \item A \textbf{dual-branch retrieval pipeline} combining R-GCN
@@ -147,7 +147,7 @@ FED-GRAPH-MCP addresses all three gaps. Our contributions are:
 
     \item A \textbf{CRUD-triggered incremental sync daemon} that
     bounds re-indexing cost to the 2-hop neighborhood of changed
-    tools, achieving 83.9--99.9\% latency reduction over full
+    tools, achieving 96.5--99.9\% latency reduction over full
     rebuilds.
 
     \item The \textbf{first dual-benchmark evaluation} of an MCP
@@ -237,10 +237,7 @@ human annotation:
     of tool $A$ intersects the input schema of tool $B$ by $>0.7$
     type-overlap ratio. Enables chaining of tool calls.
 
-    \item \textbf{\textsc{param\_type\_overlap}}: Tools share
-    $\geq 2$ parameter types (e.g., both accept
-    \texttt{datetime}, \texttt{location}). Jaccard similarity over
-    parameter type sets $> 0.4$.
+    \item \textbf{\textsc{param\_name\_overlap}}: Tools share parameter names (excluding generic ones like \texttt{id}, \texttt{name}, etc.) with a parameter name Jaccard similarity threshold $\ge 0.3$.
 
     \item \textbf{\textsc{compose\_dep}}: Tool $A$ is a semantic
     prerequisite for tool $B$, extracted via an LLM-assisted
@@ -260,12 +257,12 @@ dataset~\cite{fei2025mcpzero} (2,797 tools from 308 servers).
 \toprule
 Edge Type & Count & Avg.\ Weight \\
 \midrule
-\textsc{co\_invoke}          & 1,842 & 0.61 \\
-\textsc{schema\_compat}      & 3,104 & 0.74 \\
-\textsc{param\_type\_overlap}& 5,217 & 0.52 \\
-\textsc{compose\_dep}        & 987   & 0.83 \\
+\textsc{co\_invoke}          & 4,078 & 0.6922 \\
+\textsc{schema\_compat}      & 7,228 & 0.9960 \\
+\textsc{param\_name\_overlap} & 7,644 & 0.5631 \\
+\textsc{compose\_dep}        & 2,263 & 0.8838 \\
 \midrule
-Total                         & 11,150 & --- \\
+Total                         & 21,213 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -291,7 +288,7 @@ under relation $r$.
 
 Initial node features $h_v^{(0)}$ are 384-dimensional
 SentenceTransformer (\texttt{all-MiniLM-L6-v2}) embeddings of tool
-descriptions. We use a 2-layer R-GCN with hidden dimension 256 and
+descriptions. We use a 2-layer R-GCN with hidden dimension 384 and
 output dimension 384 (matching the dense embedding space), trained on
 a link-prediction task (binary cross-entropy loss) with 80/10/10
 train/val/test edge split.
@@ -349,10 +346,8 @@ held-out calibration split:
     calibration set.
 
     \item \textbf{Learned Reranker:} A 2-layer MLP
-    $f\!: \mathbb{R}^{769} \to \mathbb{R}$ taking
-    $[e_q \| e_t \| s_{\text{RRF}}]$ as input, trained on 493
-    query-tool positive pairs from APIBank with pairwise margin loss
-    (final loss: 0.0567).
+    $f\!: \mathbb{R}^{768} \to \mathbb{R}$ taking
+    $[e_q \| e_t]$ as input, trained on query-tool positive/negative pairs from the training split of the MCP tools with pairwise margin loss.
 \end{enumerate}
 
 The learned reranker achieves the best calibration nDCG@5 and is used
@@ -383,18 +378,18 @@ $d_t$ is the degree of $t$, versus $O(|V|)$ for a full rebuild.
 \toprule
 Operation & Incremental (ms) & Full Rebuild (ms) & Reduction \\
 \midrule
-\texttt{server\_add}    & 1,173 & 7,908 & 85.2\% \\
-\texttt{tool\_update}   & 1,270 & 7,908 & 83.9\% \\
-\texttt{server\_remove} & 4     & 7,908 & 99.9\% \\
+\texttt{server\_add}    & 104.22 & 6,431.49 & 98.4\% \\
+\texttt{tool\_update}   & 227.01 & 6,431.49 & 96.5\% \\
+\texttt{server\_remove} & 4.31   & 6,431.49 & 99.9\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Table~\ref{tab:sync_latency} reports measured latencies on the
 MCP-tools dataset (2,797 nodes). Full rebuild time breaks down as:
-graph construction (4,739\,ms) + embedding generation (1,998\,ms) +
-GNN forward pass (1,002\,ms) + FAISS build (170\,ms) =
-\textbf{7,908\,ms} total.
+graph construction (4,471.18\,ms) + embedding generation (1,760.83\,ms) +
+GNN forward pass (38.29\,ms) + FAISS build (161.20\,ms) =
+\textbf{6,431.49\,ms} total.
 
 
 % ══════════════════════════════════════════════════════════════════
@@ -511,13 +506,13 @@ chaining is frequent enough in both benchmark distributions to make
 neighborhood expansion consistently beneficial.
 
 \paragraph{RQ3: Does incremental sync preserve quality?}
-Table~\ref{tab:sync_latency} demonstrates 83.9--99.9\% latency
+Table~\ref{tab:sync_latency} demonstrates 96.5--99.9\% latency
 reduction across all event types. The \texttt{server\_remove} event
-is fastest (4\,ms) because no embedding recomputation is
+is fastest (4.31\,ms) because no embedding recomputation is
 required---only node/edge deletion from the graph and FAISS
-\texttt{remove\_ids()}. The \texttt{tool\_update} event (1,270\,ms)
+\texttt{remove\_ids()}. The \texttt{tool\_update} event (227.01\,ms)
 is the most expensive incremental operation due to edge recomputation
-and 2-hop GNN refresh, but still $6.2\times$ faster than a full
+and 2-hop GNN refresh, but still $28.3\times$ faster than a full
 rebuild. We confirm that retrieval quality degradation from
 incremental sync versus a full rebuild is $<1\%$ on the held-out
 evaluation set (not shown), well within the $<3\%$ target.
@@ -673,7 +668,7 @@ Under simulated benchmark conditions mirroring LiveMCPBench and
 MCP-Bench task distributions, FED-GRAPH-MCP achieves Recall@5 of
 0.853 and 0.856 respectively---gains of +10.6pp over the MCP-Zero
 baseline on both benchmarks---while the incremental sync daemon
-reduces re-indexing latency by 83.9--99.9\% versus full rebuilds.
+reduces re-indexing latency by 96.5--99.9\% versus full rebuilds.
 Ablation studies confirm that functional edge types, learned
 reranking, and graph expansion contribute independently and
 additively.

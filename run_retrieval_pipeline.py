@@ -67,8 +67,8 @@ def main():
     for c in candidates:
         idx = pipeline.node_to_idx[c["name"]]
         # We can use the enriched GNN embedding or raw embedding of the candidate.
-        # Let's use the enriched embedding.
-        candidate_embs.append(torch.tensor(pipeline.H[idx]))
+        # Let's use the raw embedding.
+        candidate_embs.append(torch.tensor(pipeline.X[idx]))
     candidate_embs = torch.stack(candidate_embs)
     
     # Compute scores from the 2-layer MLP

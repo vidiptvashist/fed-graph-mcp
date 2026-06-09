@@ -45,7 +45,7 @@ def run_pipeline():
     # 50 epochs is sufficient for convergence and fast execution
     H, node_to_idx, model = train_rgcn(
         G,
-        epochs=2,
+        epochs=30,
         lr=0.01,
         val_ratio=0.1,
         test_ratio=0.1,

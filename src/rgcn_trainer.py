@@ -13,24 +13,31 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 
 class RGCNNet(torch.nn.Module):
     """
-    2-layer R-GCN architecture matching:
-    - hidden_dim = 256
+    2-layer R-GCN architecture with LeakyReLU and skip connections to prevent over-smoothing.
+    - hidden_dim = 384
     - out_dim = 384
-    - num_relations = 4
+    - num_relations = 5 (including self-loops)
     """
     def __init__(self, in_dim: int, hidden_dim: int, out_dim: int, num_relations: int):
         super().__init__()
         self.conv1 = RGCNConv(in_dim, hidden_dim, num_relations)
         self.conv2 = RGCNConv(hidden_dim, out_dim, num_relations)
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU(0.1)
         self.dropout = nn.Dropout(0.1)
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor, edge_type: torch.Tensor) -> torch.Tensor:
-        x = self.conv1(x, edge_index, edge_type)
-        x = self.relu(x)
-        x = self.dropout(x)
-        x = self.conv2(x, edge_index, edge_type)
-        return x
+        # Layer 1 + Residual
+        x1 = self.conv1(x, edge_index, edge_type)
+        if x1.shape == x.shape:
+            x1 = x1 + x
+        x1 = self.relu(x1)
+        x1 = self.dropout(x1)
+        
+        # Layer 2 + Residual
+        x2 = self.conv2(x1, edge_index, edge_type)
+        if x2.shape == x1.shape:
+            x2 = x2 + x1
+        return x2
 
 class RGCNLinkPredictor(torch.nn.Module):
     """
@@ -159,6 +166,12 @@ def train_rgcn(
     train_dst = [e[1] for e in train_edges]
     train_type = [e[2] for e in train_edges]
     
+    # Add self-loops to training edge list to avoid representation collapse of isolated nodes
+    for idx in range(num_nodes):
+        train_src.append(idx)
+        train_dst.append(idx)
+        train_type.append(4) # Relation ID 4 represents self-loops
+        
     train_edge_index = torch.tensor([train_src, train_dst], dtype=torch.long).to(device)
     train_edge_type = torch.tensor(train_type, dtype=torch.long).to(device)
     
@@ -166,11 +179,18 @@ def train_rgcn(
     full_src = [e[0] for e in edges_list]
     full_dst = [e[1] for e in edges_list]
     full_type = [e[2] for e in edges_list]
+    
+    # Add self-loops to full graph edge list
+    for idx in range(num_nodes):
+        full_src.append(idx)
+        full_dst.append(idx)
+        full_type.append(4)
+        
     full_edge_index = torch.tensor([full_src, full_dst], dtype=torch.long).to(device)
     full_edge_type = torch.tensor(full_type, dtype=torch.long).to(device)
     
     # 6. Initialize model, optimizer, and loss function
-    predictor = RGCNLinkPredictor(in_dim=384, hidden_dim=256, out_dim=384, num_relations=4).to(device)
+    predictor = RGCNLinkPredictor(in_dim=384, hidden_dim=384, out_dim=384, num_relations=5).to(device)
     optimizer = torch.optim.Adam(predictor.parameters(), lr=lr, weight_decay=weight_decay)
     criterion = nn.BCELoss()
     

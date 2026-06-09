@@ -1,31 +1,31 @@
 {
   "incremental_latencies": {
-    "server_add": 1173.180458000001,
-    "tool_update": 1269.5830419999988,
-    "server_remove": 4.0842919999981575
+    "server_add": 104.22066699999988,
+    "tool_update": 227.0146670000006,
+    "server_remove": 4.3080829999997405
   },
   "full_rebuild": {
-    "full_rebuild_ms": 7907.896875000006,
-    "graph_build_ms": 4738.817709000003,
-    "embedding_ms": 1997.5897910000028,
-    "gnn_forward_ms": 1001.7498339999981,
-    "faiss_build_ms": 169.739541000002
+    "full_rebuild_ms": 6431.492668000005,
+    "graph_build_ms": 4471.1806670000005,
+    "embedding_ms": 1760.8272920000018,
+    "gnn_forward_ms": 38.28737500000301,
+    "faiss_build_ms": 161.19733400000058
   },
   "reduction_ratios": {
     "server_add": {
-      "incremental_ms": 1173.180458000001,
-      "full_rebuild_ms": 7907.896875000006,
-      "reduction_pct": 85.16444414305795
+      "incremental_ms": 104.22066699999988,
+      "full_rebuild_ms": 6431.492668000005,
+      "reduction_pct": 98.37952599217672
     },
     "tool_update": {
-      "incremental_ms": 1269.5830419999988,
-      "full_rebuild_ms": 7907.896875000006,
-      "reduction_pct": 83.94537685470263
+      "incremental_ms": 227.0146670000006,
+      "full_rebuild_ms": 6431.492668000005,
+      "reduction_pct": 96.4702647003002
     },
     "server_remove": {
-      "incremental_ms": 4.0842919999981575,
-      "full_rebuild_ms": 7907.896875000006,
-      "reduction_pct": 99.94835172910625
+      "incremental_ms": 4.3080829999997405,
+      "full_rebuild_ms": 6431.492668000005,
+      "reduction_pct": 99.93301581417585
     }
   }
 }

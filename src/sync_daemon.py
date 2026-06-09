@@ -28,7 +28,7 @@ class SyncDaemon:
         if gnn_model_path is None:
             gnn_model_path = os.path.join(pipeline.base_dir, "mcp_rgcn_model.pt")
             
-        self.gnn_model = RGCNLinkPredictor(in_dim=384, hidden_dim=256, out_dim=384, num_relations=4).to(device)
+        self.gnn_model = RGCNLinkPredictor(in_dim=384, hidden_dim=384, out_dim=384, num_relations=5).to(device)
         if os.path.exists(gnn_model_path):
             self.gnn_model.load_state_dict(torch.load(gnn_model_path, map_location=device))
             print(f"[SyncDaemon] Loaded trained GNN model from {gnn_model_path}")
