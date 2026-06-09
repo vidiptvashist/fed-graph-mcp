@@ -12,10 +12,11 @@ class GraphBuilder:
     Orchestrates the construction of a FED-GRAPH-MCP multi-typed tool graph.
     """
     
-    def __init__(self, trajectory_dir: str = None, openai_api_key: str = None, compose_cache_path: str = ".compose_dep_cache.json"):
+    def __init__(self, trajectory_dir: str = None, openai_api_key: str = None, compose_cache_path: str = ".compose_dep_cache.json", use_dense: bool = False):
         self.trajectory_dir = trajectory_dir
         self.openai_api_key = openai_api_key
         self.compose_cache_path = compose_cache_path
+        self.use_dense = use_dense
         
     def build_graph(self, manifest_path: str) -> nx.MultiDiGraph:
         """
@@ -44,9 +45,9 @@ class GraphBuilder:
             
         # 4. Instantiate miners and mine edges
         miners = {
-            "co_invoke": CoInvocationMiner(self.trajectory_dir),
-            "schema_compat": SchemaCompatMiner(),
-            "param_overlap": ParamOverlapMiner(),
+            "co_invoke": CoInvocationMiner(self.trajectory_dir, use_dense=self.use_dense),
+            "schema_compat": SchemaCompatMiner(use_dense=self.use_dense),
+            "param_overlap": ParamOverlapMiner(use_dense=self.use_dense),
             "compose_dep": ComposeDepMiner(cache_path=self.compose_cache_path, api_key=self.openai_api_key)
         }
         

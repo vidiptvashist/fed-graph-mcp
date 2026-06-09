@@ -1,0 +1,26 @@
+{
+  "Sparse Graph": {
+    "num_edges": 21213,
+    "build_time_s": 5.137401819229126,
+    "memory_mb": 6.1306640625,
+    "faiss_size_mb": 4.776556015014648,
+    "gnn_train_time_s": 6.160431861877441,
+    "livemcp_r1": 0.08421052631578947,
+    "livemcp_r5": 0.09473684210526316,
+    "mcpbench_r1": 0.09615384615384616,
+    "mcpbench_r5": 0.14423076923076922,
+    "oom": false
+  },
+  "Dense Graph": {
+    "num_edges": 1372727,
+    "build_time_s": 5.2472288608551025,
+    "memory_mb": 138.114453125,
+    "faiss_size_mb": 0.0,
+    "gnn_train_time_s": 0.0,
+    "livemcp_r1": 0.0,
+    "livemcp_r5": 0.0,
+    "mcpbench_r1": 0.0,
+    "mcpbench_r5": 0.0,
+    "oom": true
+  }
+}

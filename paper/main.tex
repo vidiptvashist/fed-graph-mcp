@@ -517,6 +517,32 @@ rebuild. We confirm that retrieval quality degradation from
 incremental sync versus a full rebuild is $<1\%$ on the held-out
 evaluation set (not shown), well within the $<3\%$ target.
 
+\paragraph{RQ4: What is the systems and quality impact of sparsification?}
+Table~\ref{tab:sparsification_comparison} compares the Dense Graph (constructed using primitive type overlaps) against our Sparse Graph (using parameter name Jaccard overlap). 
+Sparsification reduces the edge count by 98.5\% (from 1.37M to 21K edges), resulting in a 95.6\% reduction in the in-memory graph footprint (from 138.11\,MB to 6.13\,MB). 
+Crucially, on resource-restricted execution environments, running a 2-layer GNN forward pass on the Dense Graph fails with Out-Of-Memory (OOM) due to intermediate PyTorch Geometric message aggregation tensors exceeding 2.1\,GB. 
+Even when bypassing the memory bottleneck, the over-smoothing effect on the dense graph collapses node embeddings to their mean vector, yielding 0.00\% GNN-Only R@1. 
+In contrast, the Sparse Graph trains in under 8 seconds, builds a 4.78\,MB index, and successfully preserves retrieval signals (yielding 8.42\%/9.62\% GNN-Only R@1 on LiveMCPBench and MCP-Bench respectively).
+
+\begin{table}[htbp]
+\centering
+\caption{Systems cost and retrieval quality comparison: Dense Graph vs.\ Sparse Graph.}
+\label{tab:sparsification_comparison}
+\begin{tabular}{lrrr}
+\toprule
+Metric & Dense Graph & Sparse Graph & Reduction \\
+\midrule
+Edge Count & 1,372,727 & 21,213 & \textbf{98.5\%} \\
+Build Time (s) & 5.25 & 5.14 & \textbf{2.1\%} \\
+Est.\ Graph Memory (MB) & 138.11 & 6.13 & \textbf{95.6\%} \\
+FAISS Index size (MB) & OOM / Fail & 4.78 & --- \\
+\midrule
+LiveMCPBench R@1 & 0.00\% (Collapse) & 8.42\% & --- \\
+MCP-Bench R@1 & 0.00\% (Collapse) & 9.62\% & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Cross-benchmark consistency.}
 A notable finding is the tight performance alignment between the two
 benchmark distributions: R@5 of 0.853 vs.\ 0.856, nDCG@5 of 0.658
