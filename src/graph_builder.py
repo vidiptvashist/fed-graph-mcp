@@ -12,11 +12,14 @@ class GraphBuilder:
     Orchestrates the construction of a FED-GRAPH-MCP multi-typed tool graph.
     """
     
-    def __init__(self, trajectory_dir: str = None, openai_api_key: str = None, compose_cache_path: str = ".compose_dep_cache.json", use_dense: bool = False):
+    def __init__(self, trajectory_dir: str = None, openai_api_key: str = None, compose_cache_path: str = ".compose_dep_cache.json", use_dense: bool = False, co_invoke_thresh: float = None, schema_compat_thresh: float = None, param_overlap_thresh: float = None):
         self.trajectory_dir = trajectory_dir
         self.openai_api_key = openai_api_key
         self.compose_cache_path = compose_cache_path
         self.use_dense = use_dense
+        self.co_invoke_thresh = co_invoke_thresh
+        self.schema_compat_thresh = schema_compat_thresh
+        self.param_overlap_thresh = param_overlap_thresh
         
     def build_graph(self, manifest_path: str) -> nx.MultiDiGraph:
         """
@@ -45,9 +48,9 @@ class GraphBuilder:
             
         # 4. Instantiate miners and mine edges
         miners = {
-            "co_invoke": CoInvocationMiner(self.trajectory_dir, use_dense=self.use_dense),
-            "schema_compat": SchemaCompatMiner(use_dense=self.use_dense),
-            "param_overlap": ParamOverlapMiner(use_dense=self.use_dense),
+            "co_invoke": CoInvocationMiner(self.trajectory_dir, use_dense=self.use_dense, threshold=self.co_invoke_thresh),
+            "schema_compat": SchemaCompatMiner(use_dense=self.use_dense, threshold=self.schema_compat_thresh),
+            "param_overlap": ParamOverlapMiner(use_dense=self.use_dense, threshold=self.param_overlap_thresh),
             "compose_dep": ComposeDepMiner(cache_path=self.compose_cache_path, api_key=self.openai_api_key)
         }
         

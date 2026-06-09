@@ -7,8 +7,9 @@ class SchemaCompatMiner:
     overlap = |T_A intersect T_B| / min(|T_A|, |T_B|).
     """
     
-    def __init__(self, use_dense: bool = False):
+    def __init__(self, use_dense: bool = False, threshold: float = None):
         self.use_dense = use_dense
+        self.threshold = threshold
         
     def mine_edges(self, tools: List[Dict[str, Any]]) -> List[Tuple[str, str, float]]:
         """
@@ -40,7 +41,8 @@ class SchemaCompatMiner:
                     intersection = types_A.intersection(types_B)
                     overlap = len(intersection) / min(len(types_A), len(types_B)) if min(len(types_A), len(types_B)) > 0 else 0.0
                     
-                    if overlap >= 0.7:
+                    thresh_val = self.threshold if self.threshold is not None else 0.7
+                    if overlap >= thresh_val:
                         id_B = tools[j]["id"]
                         edges.append((id_A, id_B, overlap))
                         edges.append((id_B, id_A, overlap))
@@ -73,7 +75,8 @@ class SchemaCompatMiner:
                         continue
                         
                     overlap = len(intersection) / min(len(names_A), len(names_B))
-                    if overlap >= 0.7:
+                    thresh_val = self.threshold if self.threshold is not None else 0.7
+                    if overlap >= thresh_val:
                         id_B = tools[j]["id"]
                         edges.append((id_A, id_B, overlap))
                         edges.append((id_B, id_A, overlap))

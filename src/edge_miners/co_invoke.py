@@ -9,9 +9,10 @@ class CoInvocationMiner:
     Computes Pointwise Mutual Information (PMI) over APIBank trajectory logs (JSONL dialogue files).
     """
     
-    def __init__(self, trajectory_dir: str = None, use_dense: bool = False):
+    def __init__(self, trajectory_dir: str = None, use_dense: bool = False, threshold: float = None):
         self.trajectory_dir = trajectory_dir
         self.use_dense = use_dense
+        self.threshold = threshold
         
     def _clean_tool_name(self, name: str) -> str:
         """
@@ -104,7 +105,8 @@ class CoInvocationMiner:
                     
                 pmi = math.log2((count_joint * N) / (count_t1 * count_t2))
                 
-                if pmi > 0.5:
+                thresh_val = self.threshold if self.threshold is not None else 0.5
+                if pmi > thresh_val:
                     weight = min(1.0, max(0.0, pmi / max_possible_pmi))
                     for id_t1 in cleaned_to_ids[t1]:
                         for id_t2 in cleaned_to_ids[t2]:
@@ -156,7 +158,8 @@ class CoInvocationMiner:
                             continue
                             
                         sim = np.dot(emb_A, emb_B) / (norm_A * norm_B)
-                        if sim > 0.6:
+                        thresh_val = self.threshold if self.threshold is not None else 0.6
+                        if sim > thresh_val:
                             edges.append((id_A, id_B, float(sim)))
                             edges.append((id_B, id_A, float(sim)))
                             

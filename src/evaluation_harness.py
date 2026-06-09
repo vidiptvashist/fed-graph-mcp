@@ -232,6 +232,7 @@ class EvaluationHarness:
     def run_ablation_grid(self) -> Dict[str, Any]:
         """
         Runs the complete ablation study grid: 7 conditions x 2 benchmarks = 14 runs.
+        Evaluates each run over 5 different task seeds and computes mean + std.
         Returns the full metrics tree.
         """
         conditions = [
@@ -245,20 +246,53 @@ class EvaluationHarness:
         ]
         
         benchmarks = {
-            "LiveMCPBench (Simulated)": self.livemcpbench_tasks,
-            "MCP-Bench (Simulated)": self.mcpbench_tasks
+            "LiveMCPBench (Simulated)": {
+                "seeds": [42, 43, 44, 45, 46],
+                "prefix": "livemcp",
+                "count": 95
+            },
+            "MCP-Bench (Simulated)": {
+                "seeds": [7777, 7778, 7779, 7780, 7781],
+                "prefix": "mcpbench",
+                "count": 104
+            }
         }
         
         results = {}
-        for bench_name, tasks in benchmarks.items():
-            print(f"\n[Ablation] Running evaluation on benchmark: {bench_name} ({len(tasks)} tasks)...")
+        for bench_name, config in benchmarks.items():
+            print(f"\n[Ablation] Running multi-seed evaluation on benchmark: {bench_name}...")
             results[bench_name] = {}
+            
+            # Pre-generate task sets for the 5 seeds
+            task_sets = []
+            for seed in config["seeds"]:
+                tasks = self._build_semantic_tasks(
+                    count=config["count"],
+                    seed=seed,
+                    prefix=config["prefix"]
+                )
+                task_sets.append(tasks)
+                
             for cond in conditions:
                 start_time = time.time()
-                metrics = self.run_evaluation(tasks, cond)
+                
+                # Run evaluation for each seed
+                seed_runs = []
+                for tasks in task_sets:
+                    run_metrics = self.run_evaluation(tasks, cond)
+                    seed_runs.append(run_metrics)
+                    
+                # Aggregate metrics across seeds
+                agg_metrics = {}
+                keys = ["Recall@1", "Recall@5", "nDCG@5", "SuccessRate", "TokenCount"]
+                for key in keys:
+                    vals = [run[key] for run in seed_runs]
+                    agg_metrics[key] = float(np.mean(vals))
+                    agg_metrics[f"{key}_std"] = float(np.std(vals))
+                    
                 elapsed = time.time() - start_time
-                results[bench_name][cond] = metrics
-                print(f"  Condition: {cond:<15} | Recall@5: {metrics['Recall@5']:.4f} | success: {metrics['SuccessRate']:.4f} | Time: {elapsed:.2f}s")
+                results[bench_name][cond] = agg_metrics
+                print(f"  Condition: {cond:<15} | Recall@5: {agg_metrics['Recall@5']:.4f} +- {agg_metrics['Recall@5_std']:.4f} | success: {agg_metrics['SuccessRate']:.4f} | Time: {elapsed:.2f}s")
                 
         # Save evaluation output JSON
         out_path = os.path.join(self.base_dir, "evaluation_results.json")
@@ -270,7 +304,7 @@ class EvaluationHarness:
 
     def generate_latex_tables(self, results: Dict[str, Any], output_path: str = None) -> str:
         """
-        Generates LaTeX tables from the evaluation results.
+        Generates LaTeX tables from the evaluation results with mean +- std.
         Tables include a footnote clarifying simulated benchmark conditions.
         """
         latex_output = []
@@ -316,9 +350,26 @@ class EvaluationHarness:
             for cond in ["baseline", "dense_only", "gnn_only", "rrf_only", "rrf_rerank", "rrf_expand", "full_pipeline"]:
                 metrics = bench_results[cond]
                 label = condition_labels[cond]
+                
+                # Format mean +- std
+                r1_str = f"{metrics['Recall@1']:.4f} \\pm {metrics.get('Recall@1_std', 0.0):.4f}"
+                r5_str = f"{metrics['Recall@5']:.4f} \\pm {metrics.get('Recall@5_std', 0.0):.4f}"
+                ndcg_str = f"{metrics['nDCG@5']:.4f} \\pm {metrics.get('nDCG@5_std', 0.0):.4f}"
+                succ_str = f"{metrics['SuccessRate']*100:.2f}\\% \\pm {metrics.get('SuccessRate_std', 0.0)*100:.2f}\\%"
+                
+                # Remove \pm 0.00% / \pm 0.0000 if it is exactly zero to keep tables readable
+                if metrics.get('Recall@1_std', 0.0) == 0.0:
+                    r1_str = f"{metrics['Recall@1']:.4f}"
+                if metrics.get('Recall@5_std', 0.0) == 0.0:
+                    r5_str = f"{metrics['Recall@5']:.4f}"
+                if metrics.get('nDCG@5_std', 0.0) == 0.0:
+                    ndcg_str = f"{metrics['nDCG@5']:.4f}"
+                if metrics.get('SuccessRate_std', 0.0) == 0.0:
+                    succ_str = f"{metrics['SuccessRate']*100:.2f}\\%"
+                
                 table.append(
-                    f"{label} & {metrics['Recall@1']:.4f} & {metrics['Recall@5']:.4f} & "
-                    f"{metrics['nDCG@5']:.4f} & {metrics['SuccessRate']:.2%} & {int(metrics['TokenCount'])} \\\\"
+                    f"{label} & {r1_str} & {r5_str} & "
+                    f"{ndcg_str} & {succ_str} & {int(metrics['TokenCount'])} \\\\"
                 )
                 
             table.append("\\hline")

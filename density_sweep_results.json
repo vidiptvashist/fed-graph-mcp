@@ -1,0 +1,32 @@
+[
+  {
+    "threshold": 0.9,
+    "edges": 11183,
+    "memory_mb": 5.151171875,
+    "gnn_recall_at_1": 0.15789473684210528
+  },
+  {
+    "threshold": 0.7,
+    "edges": 12857,
+    "memory_mb": 5.3146484375,
+    "gnn_recall_at_1": 0.19999999999999998
+  },
+  {
+    "threshold": 0.5,
+    "edges": 29773,
+    "memory_mb": 6.9666015625,
+    "gnn_recall_at_1": 0.20350877192982456
+  },
+  {
+    "threshold": 0.3,
+    "edges": 54747,
+    "memory_mb": 9.40546875,
+    "gnn_recall_at_1": 0.28421052631578947
+  },
+  {
+    "threshold": 0.1,
+    "edges": 98913,
+    "memory_mb": 13.718554687500001,
+    "gnn_recall_at_1": 0.2596491228070175
+  }
+]

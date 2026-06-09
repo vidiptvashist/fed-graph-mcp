@@ -6,8 +6,9 @@ class ParamOverlapMiner:
     Computes Jaccard similarity over parameter sets.
     """
     
-    def __init__(self, use_dense: bool = False):
+    def __init__(self, use_dense: bool = False, threshold: float = None):
         self.use_dense = use_dense
+        self.threshold = threshold
         
     def mine_edges(self, tools: List[Dict[str, Any]]) -> List[Tuple[str, str, float]]:
         """
@@ -40,7 +41,8 @@ class ParamOverlapMiner:
                     union = types_A.union(types_B)
                     jaccard = len(intersection) / len(union) if union else 0.0
                     
-                    if jaccard > 0.4:
+                    thresh_val = self.threshold if self.threshold is not None else 0.4
+                    if jaccard > thresh_val:
                         id_B = tools[j]["id"]
                         edges.append((id_A, id_B, jaccard))
                         edges.append((id_B, id_A, jaccard))
@@ -74,7 +76,8 @@ class ParamOverlapMiner:
                         
                     union = names_A.union(names_B)
                     jaccard = len(intersection) / len(union) if union else 0.0
-                    if jaccard >= 0.3:
+                    thresh_val = self.threshold if self.threshold is not None else 0.3
+                    if jaccard >= thresh_val:
                         id_B = tools[j]["id"]
                         edges.append((id_A, id_B, jaccard))
                         edges.append((id_B, id_A, jaccard))

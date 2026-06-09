@@ -130,5 +130,41 @@
     "event_type": "tool_update",
     "details": "Tool ServerA/toolA",
     "sync_latency_ms": 47.761833999999226
+  },
+  {
+    "timestamp": 1780989331.318562,
+    "event_type": "server_add",
+    "details": "Server MockDBSpeed with 2 tools",
+    "sync_latency_ms": 114.1231250000061
+  },
+  {
+    "timestamp": 1780989331.549593,
+    "event_type": "tool_update",
+    "details": "Tool MockDBSpeed/query_speed",
+    "sync_latency_ms": 228.76145899999756
+  },
+  {
+    "timestamp": 1780989331.557708,
+    "event_type": "server_remove",
+    "details": "Server MockDBSpeed with 2 tools",
+    "sync_latency_ms": 6.932790999996996
+  },
+  {
+    "timestamp": 1780989331.638803,
+    "event_type": "server_add",
+    "details": "Server ServerA with 1 tools",
+    "sync_latency_ms": 50.29641700001264
+  },
+  {
+    "timestamp": 1780989331.692491,
+    "event_type": "server_add",
+    "details": "Server ServerB with 1 tools",
+    "sync_latency_ms": 53.20895800001324
+  },
+  {
+    "timestamp": 1780989331.744415,
+    "event_type": "tool_update",
+    "details": "Tool ServerA/toolA",
+    "sync_latency_ms": 51.474708000000646
   }
 ]
